@@ -37,6 +37,16 @@ func httpuClient() (httpu.ClientInterface, func(), error) {
 	return httpu.NewMultiClient(delegates), closer, nil
 }
 
+func SetSearchInterface(ifaces ...string) {
+	for _, iface := range ifaces {
+		if !IsInStringSlice(iface, searchInterface) {
+			searchInterface = append(searchInterface, iface)
+		}
+	}
+}
+
+var searchInterface []string
+
 // localIPv2MCastAddrs returns the set of IPv4 addresses on multicast-able
 // network interfaces.
 func localIPv4MCastAddrs() ([]string, error) {
@@ -52,6 +62,11 @@ func localIPv4MCastAddrs() ([]string, error) {
 			// Does not support multicast or is a loopback address.
 			continue
 		}
+
+		if searchInterface != nil && len(searchInterface) != 0 && !IsInStringSlice(iface.Name, searchInterface) {
+			continue
+		}
+
 		ifaceAddrs, err := iface.Addrs()
 		if err != nil {
 			return nil, ctxErrorf(err,
@@ -72,4 +87,14 @@ func localIPv4MCastAddrs() ([]string, error) {
 	}
 
 	return addrs, nil
+}
+
+// IsInStringSlice returns true if the given string is in the given slice of
+func IsInStringSlice(s string, slice []string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
